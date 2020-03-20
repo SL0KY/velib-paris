@@ -3,7 +3,6 @@ package com.domquentin.eemi
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.JsonReader
@@ -14,22 +13,18 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
-import androidx.core.database.getStringOrNull
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.FileWriter
 import java.io.InputStreamReader
 import java.net.URL
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
 import java.util.*
 
 class StupidAdapter (activity: MainActivity, ctx: Context, resid: Int): ArrayAdapter<Velib>(ctx, resid) {
     var act = activity
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val v  = convertView ?: act.layoutInflater.inflate(R.layout.line, null)
-        v.findViewById<TextView>(R.id.lineText).text = this.getItem(position).velib_name
-        v.findViewById<TextView>(R.id.number).text = this.getItem(position).velib_nbBike.toString() + "/" + this.getItem(position).velib_capacity.toString()
+        v.findViewById<TextView>(R.id.lineText).text = this.getItem(position).velibName
+        v.findViewById<TextView>(R.id.number).text = this.getItem(position).velibNbBike.toString() + "/" + this.getItem(position).velibCapacity.toString()
+        v.findViewById<TextView>(R.id.coordinates).text = "Long : " + this.getItem(position).velibLongitude.toString() + " - Lat : " + this.getItem(position).velibLatitude.toString()
         return v
     }
 }
@@ -105,6 +100,8 @@ class MainActivity : AppCompatActivity() {
                             var velibName: String = ""
                             var capacity: Int = 0
                             var nbBike: Int = 0
+                            var longitude: Double = 0.0
+                            var latitude: Double = 0.0
                             while(reader.hasNext()) {
                                 var name2 = reader.nextName()
                                 if (name2.equals("fields")) {
@@ -115,6 +112,19 @@ class MainActivity : AppCompatActivity() {
                                             "numbikesavailable" -> nbBike = reader.nextInt()
                                             "capacity" -> capacity = reader.nextInt()
                                             "name" -> velibName = reader.nextString()
+                                            "coordonnees_geo" -> {
+                                                reader.beginArray()
+                                                var i: Int = 0
+                                                while(reader.hasNext()) {
+                                                    if(i == 0) {
+                                                        longitude = reader.nextDouble()
+                                                    } else {
+                                                        latitude = reader.nextDouble()
+                                                    }
+                                                    i++
+                                                }
+                                                reader.endArray()
+                                            }
                                             else -> reader.skipValue()
                                         }
                                     }
@@ -123,7 +133,7 @@ class MainActivity : AppCompatActivity() {
                                     reader.skipValue()
                                 }
                             }
-                            var v = Velib(nbBike, capacity, velibName)
+                            var v = Velib(nbBike, capacity, velibName, longitude, latitude)
                             buffer.add(v)
                             reader.endObject()
                         }
@@ -167,7 +177,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getCurrentDate() : String {
-        val sdf = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
+        val sdf = SimpleDateFormat("dd/MM/yyyy kk:mm:ss")
         val currentDate = sdf.format(Date())
         return currentDate
     }
@@ -184,10 +194,12 @@ class MySQLiteHelper(context: Context) : SQLiteOpenHelper(context, "LocalDB", nu
 
 }
 
-class Velib(nbBike: Int, capacity: Int, name: String) {
-    val velib_nbBike: Int = nbBike
-    val velib_capacity: Int = capacity
-    val velib_name: String = name
+class Velib(nbBike: Int, capacity: Int, name: String, longitude: Double, latitude: Double) {
+    val velibNbBike: Int = nbBike
+    val velibCapacity: Int = capacity
+    val velibName: String = name
+    val velibLongitude: Double = longitude
+    val velibLatitude: Double = latitude
 }
 /**
 data class Coordonnees(var lat : Double, val lng: Double) {
