@@ -1,5 +1,6 @@
 package com.domquentin.eemi
 
+import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -13,8 +14,10 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import androidx.core.database.getStringOrNull
 import java.io.InputStreamReader
 import java.net.URL
+import java.sql.Types.ROWID
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -69,16 +72,37 @@ class MainActivity : AppCompatActivity() {
         // Stockage external
         var ext = getExternalFilesDir(null)
         // var cache = externalCacheDir
+        **/
+    }
 
+    fun insertVelib(velib: Velib) {
         //SQLite
         val helper = MySQLiteHelper(this)
-        val db = helper.readableDatabase
-        val result = db.query("test", arrayOf("test"), "", arrayOf<String>(), "", "", "")
-        while (!result.isLast) {
-            Log.e("db", result.getStringOrNull(0))
-            result.moveToNext()
+        val db = helper.writableDatabase
+
+        val result = db.query("velib", arrayOf("code"), "code = ?", arrayOf<String>(velib.velibCode), "", "", "")
+        if(result.count == 0) {
+            Log.e("INSERT", "insert");
+            val values = ContentValues().apply {
+                put("name", velib.velibName)
+                put("nbBike", velib.velibNbBike)
+                put("capacity", velib.velibCapacity)
+                put("longitude", velib.velibLongitude)
+                put("latitude", velib.velibLatitude)
+                put("code", velib.velibCode)
+            }
+            val newRowId = db?.insert("velib", null, values)
+            Log.e("ROW", newRowId.toString())
+        } else {
+            with(result) {
+                while(moveToNext()) {
+                    Log.e("RESULT", getString(getColumnIndexOrThrow("code")))
+                }
+            }
+            //TO DO Update
         }
-        result.close()**/
+        result.close()
+        db.close()
     }
 
     fun generateListView(adapter: StupidAdapter) {
@@ -97,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                         reader.beginArray()
                         while(reader.hasNext()) {
                             reader.beginObject()
+                            var code: String = ""
                             var velibName: String = ""
                             var capacity: Int = 0
                             var nbBike: Int = 0
@@ -129,12 +154,16 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                     reader.endObject()
-                                } else {
+                                } else if(name2.equals("recordid")) {
+                                    code = reader.nextString()
+                                }
+                                else {
                                     reader.skipValue()
                                 }
                             }
-                            var v = Velib(nbBike, capacity, velibName, longitude, latitude)
+                            var v = Velib(nbBike, capacity, velibName, longitude, latitude, code)
                             buffer.add(v)
+                            insertVelib(v)
                             reader.endObject()
                         }
                         reader.endArray()
@@ -155,17 +184,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     adapter!!.notifyDataSetChanged()
                 }
-
-
-                /**
-                var line : String? = reader.readLine()
-                runOnUiThread {
-                while(line != null) {
-                adapter?.add(line)
-                line = reader.readLine()
-                }
-                adapter?.notifyDataSetChanged()
-                }**/
             } catch (e : Exception) {
                 Log.e("EXC", e.message ?: "NO MESSAGE")
                 e.printStackTrace()
@@ -183,23 +201,23 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class MySQLiteHelper(context: Context) : SQLiteOpenHelper(context, "LocalDB", null, 1) {
+class MySQLiteHelper(context: Context) : SQLiteOpenHelper(context, "VelibDB", null, 1) {
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL("CREATE TABLE test(id INT NOT NULL, test TEXT)")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS velib(name VARCHAR(50), nbBike INT, capacity INT, longitude DOUBLE, latitude DOUBLE, code VARCHAR(100) PRIMARY KEY UNIQUE)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
 }
 
-class Velib(nbBike: Int, capacity: Int, name: String, longitude: Double, latitude: Double) {
+class Velib(nbBike: Int, capacity: Int, name: String, longitude: Double, latitude: Double, code: String) {
     val velibNbBike: Int = nbBike
     val velibCapacity: Int = capacity
     val velibName: String = name
     val velibLongitude: Double = longitude
     val velibLatitude: Double = latitude
+    val velibCode: String = code
 }
 /**
 data class Coordonnees(var lat : Double, val lng: Double) {
