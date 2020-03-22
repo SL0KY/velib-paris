@@ -34,9 +34,7 @@ class StupidAdapter (activity: MainActivity, ctx: Context, resid: Int): ArrayAda
 
 
 class MainActivity : AppCompatActivity() {
-
     var adapter : StupidAdapter? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -57,28 +55,6 @@ class MainActivity : AppCompatActivity() {
             adapter!!.notifyDataSetChanged()
             getDataFromDB(adapter!!)
         }
-
-
-
-        /**
-        var prefs = this.getSharedPreferences("masuperapp", Context.MODE_PRIVATE)
-        val fs = prefs.getFloat("fontSize", 14.0F)
-        var ed = prefs.edit()
-        ed.putFloat("fontSize", 18.0F)
-        ed.apply() // ed.commit()
-
-        //Stockage internal
-        var root = filesDir
-        // root.freeSpace
-        val contents = "test"
-        var writer = FileWriter(root)
-        var bw = BufferedWriter(writer)
-        bw.write(contents)
-
-        // Stockage external
-        var ext = getExternalFilesDir(null)
-        // var cache = externalCacheDir
-        **/
     }
 
     fun insertVelib(velib: Velib) {
