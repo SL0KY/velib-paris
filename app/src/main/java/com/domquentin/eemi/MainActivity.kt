@@ -43,13 +43,19 @@ class MainActivity : AppCompatActivity() {
 
         adapter = StupidAdapter(this, this, R.id.lineText)
         generateListView(adapter!!)
-        findViewById<TextView>(R.id.lastRefresh).text = getCurrentDate()
+        findViewById<TextView>(R.id.lastRefresh).text = "Last refresh :\n" + getCurrentDate()
 
         findViewById<Button>(R.id.refresh).setOnClickListener { y ->
             adapter!!.clear()
             adapter!!.notifyDataSetChanged()
             generateListView(adapter!!)
-            findViewById<TextView>(R.id.lastRefresh).text = getCurrentDate()
+            findViewById<TextView>(R.id.lastRefresh).text = "Last refresh :\n" + getCurrentDate()
+        }
+
+        findViewById<Button>(R.id.getData).setOnClickListener { y ->
+            adapter!!.clear()
+            adapter!!.notifyDataSetChanged()
+            getDataFromDB(adapter!!)
         }
 
 
@@ -82,7 +88,7 @@ class MainActivity : AppCompatActivity() {
 
         val result = db.query("velib", arrayOf("code"), "code = ?", arrayOf<String>(velib.velibCode), "", "", "")
         if(result.count == 0) {
-            Log.e("INSERT", "insert");
+            Log.e("INSERT velib in db", velib.velibCode);
             val values = ContentValues().apply {
                 put("name", velib.velibName)
                 put("nbBike", velib.velibNbBike)
@@ -92,7 +98,6 @@ class MainActivity : AppCompatActivity() {
                 put("code", velib.velibCode)
             }
             val newRowId = db?.insert("velib", null, values)
-            Log.e("ROW", newRowId.toString())
         } else {
             with(result) {
                 while(moveToNext()) {
@@ -108,13 +113,48 @@ class MainActivity : AppCompatActivity() {
                     val selection = "code = ?"
                     val selectionArgs = arrayOf(velib.velibCode)
                     val count = db.update("velib", values, selection, selectionArgs)
-                    Log.e("RESULT", getString(getColumnIndexOrThrow("code")))
-                    Log.e("COUNT UPDATE : ", count.toString())
+                    Log.e("UPDATE velib in db", velib.velibCode);
                 }
             }
         }
         result.close()
         db.close()
+    }
+
+    fun getAllStations(buffer: MutableList<Velib>) : MutableList<Velib> {
+        var b = buffer
+        val helper = MySQLiteHelper(this)
+        val db = helper.writableDatabase
+
+        val cursor = db.query("velib", null, "", arrayOf<String>(), "", "", "")
+        if(cursor.count != 0) {
+            with(cursor) {
+                while (moveToNext()) {
+                    var nbBike = getInt(getColumnIndexOrThrow("nbBike"))
+                    var capacity = getInt(getColumnIndexOrThrow("capacity"))
+                    var velibName = getString(getColumnIndexOrThrow("name"))
+                    var longitude = getDouble(getColumnIndexOrThrow("longitude"))
+                    var latitude = getDouble(getColumnIndexOrThrow("latitude"))
+                    var code = getString(getColumnIndexOrThrow("code"))
+                    var v = Velib(nbBike, capacity, velibName, longitude, latitude, code)
+                    b.add(v)
+                }
+            }
+        }
+        Log.e("get list from database ", "ok")
+        return b
+    }
+
+    fun getDataFromDB(adapter: StupidAdapter) {
+        var buffer = mutableListOf<Velib>()
+        buffer = getAllStations(buffer)
+        if(buffer.size == 0) {
+            findViewById<TextView>(R.id.error).text = "No data, please refresh in database"
+        }
+        for(n in buffer) {
+            adapter!!.add(n)
+        }
+        adapter!!.notifyDataSetChanged()
     }
 
     fun generateListView(adapter: StupidAdapter) {
@@ -187,7 +227,10 @@ class MainActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     if(buffer.size == 0) {
-                        findViewById<TextView>(R.id.error).text = "No data, please refresh"
+                        buffer = getAllStations(buffer)
+                        if(buffer.size == 0) {
+                            findViewById<TextView>(R.id.error).text = "No data, please refresh in database"
+                        }
                     } else {
                         findViewById<TextView>(R.id.error).text = ""
                     }
@@ -220,7 +263,6 @@ class MySQLiteHelper(context: Context) : SQLiteOpenHelper(context, "VelibDB", nu
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
     }
-
 }
 
 class Velib(nbBike: Int, capacity: Int, name: String, longitude: Double, latitude: Double, code: String) {
@@ -231,7 +273,3 @@ class Velib(nbBike: Int, capacity: Int, name: String, longitude: Double, latitud
     val velibLatitude: Double = latitude
     val velibCode: String = code
 }
-/**
-data class Coordonnees(var lat : Double, val lng: Double) {
-    Gson().fromJson(json, Coordonnees::class.java)
-}**/

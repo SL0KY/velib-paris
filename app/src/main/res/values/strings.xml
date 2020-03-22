@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">EEMI</string>
+    <string name="app_name">Velib Stations</string>
     <string name="refresh">REFRESH</string>
+    <string name="get_data">Get data from DB</string>
 </resources>

@@ -19,12 +19,20 @@
             android:id="@+id/refresh"
             android:layout_alignParentStart="true"/>
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/get_data"
+            android:layout_below="@+id/refresh"
+            android:id="@+id/getData"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/lastRefresh"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"/>
+            android:layout_centerVertical="true"
+            android:textAlignment="textEnd"/>
 
     </RelativeLayout>
 
