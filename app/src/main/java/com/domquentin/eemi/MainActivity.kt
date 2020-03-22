@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         var buffer = mutableListOf<Velib>()
         buffer = getAllStations(buffer)
         if(buffer.size == 0) {
-            findViewById<TextView>(R.id.error).text = "No data, please refresh in database"
+            findViewById<TextView>(R.id.error).text = "No data in database, please refresh"
         }
         for(n in buffer) {
             adapter!!.add(n)
