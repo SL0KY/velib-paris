@@ -96,10 +96,22 @@ class MainActivity : AppCompatActivity() {
         } else {
             with(result) {
                 while(moveToNext()) {
+                    val values = ContentValues().apply {
+                        put("name", velib.velibName)
+                        put("nbBike", velib.velibNbBike)
+                        put("capacity", velib.velibCapacity)
+                        put("longitude", velib.velibLongitude)
+                        put("latitude", velib.velibLatitude)
+                        put("code", velib.velibCode)
+                    }
+
+                    val selection = "code = ?"
+                    val selectionArgs = arrayOf(velib.velibCode)
+                    val count = db.update("velib", values, selection, selectionArgs)
                     Log.e("RESULT", getString(getColumnIndexOrThrow("code")))
+                    Log.e("COUNT UPDATE : ", count.toString())
                 }
             }
-            //TO DO Update
         }
         result.close()
         db.close()
